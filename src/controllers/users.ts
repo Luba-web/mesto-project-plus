@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
 
 import User from '../models/user';
+import {
+  NOT_FOUND, INTERNAL_SERVER_ERROR, BAD_REQUEST, CREATED,
+} from '../constants/constants';
 
 export const getUsers = (req: Request, res: Response) => User.find({})
-  .then((users) => res.status(201).send({ data: users }))
-  .catch(() => res.status(500).send({ message: 'Ошибка по умолчанию' }));
+  .then((users) => res.status(CREATED).send({ data: users }))
+  .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' }));
 
 export const getUserById = (req: Request, res: Response) => {
   const id = req.params.userId;
@@ -12,12 +15,12 @@ export const getUserById = (req: Request, res: Response) => {
     .then((user) => {
       if (!user) {
         return res
-          .status(404)
+          .status(NOT_FOUND)
           .send({ message: 'Пользователь по указанному _id не найден' });
       }
-      return res.status(201).send({ data: user });
+      return res.status(CREATED).send({ data: user });
     })
-    .catch(() => res.status(500).send({ message: 'Ошибка по умолчанию' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' }));
 };
 
 export const createUser = (req: Request, res: Response) => {
@@ -30,13 +33,13 @@ export const createUser = (req: Request, res: Response) => {
   })
     .then((user) => {
       if (!user) {
-        return res.status(400).send({
+        return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные при создании пользователя',
         });
       }
-      return res.status(201).send({ data: user });
+      return res.status(CREATED).send({ data: user });
     })
-    .catch(() => res.status(500).send({ message: 'Ошибка по умолчанию' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' }));
 };
 
 export const updateUser = (req: Request, res: Response) => {
@@ -46,12 +49,12 @@ export const updateUser = (req: Request, res: Response) => {
     .then((user) => {
       if (!user) {
         return res
-          .status(404)
+          .status(NOT_FOUND)
           .send({ message: 'Пользователь с указанным _id не найден' });
       }
-      return res.status(201).send({ data: user });
+      return res.status(CREATED).send({ data: user });
     })
-    .catch(() => res.status(500).send({ message: 'Ошибка по умолчанию' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' }));
 };
 
 export const updateAvatar = (req: Request, res: Response) => {
@@ -61,10 +64,10 @@ export const updateAvatar = (req: Request, res: Response) => {
     .then((user) => {
       if (!user) {
         return res
-          .status(404)
+          .status(NOT_FOUND)
           .send({ message: 'Пользователь с указанным _id не найден' });
       }
-      return res.status(201).send({ data: user });
+      return res.status(CREATED).send({ data: user });
     })
-    .catch(() => res.status(500).send({ message: 'Ошибка по умолчанию' }));
+    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' }));
 };
