@@ -1,7 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 
 import mongoose from 'mongoose';
-import path from 'path';
 
 import usersRouter from './routers/users';
 import cardsRouter from './routers/cards';
@@ -25,8 +24,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use('/users', usersRouter);
 app.use('/cards', cardsRouter);
-
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.listen(PORT, () => {
   console.log('Ссылка на сервер');
