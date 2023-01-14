@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/first
 import mongoose from 'mongoose';
 import validator from 'validator';
 

@@ -1,18 +1,20 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 import Card from '../models/card';
+import { CREATED } from '../constants';
 import {
-  INTERNAL_SERVER_ERROR,
-  NOT_FOUND,
-  BAD_REQUEST,
-  CREATED,
-} from '../constants/constants';
+  NotFoundError,
+  BadRequestError,
+  // UnauthorizedError,
+  // ConflictError,
+  ForbiddenError,
+} from '../errors/index';
 
-export const getCards = (req: Request, res: Response) => Card.find({})
+export const getCards = (req: Request, res: Response, next: NextFunction) => Card.find({})
   .then((cards) => res.status(CREATED).send({ data: cards }))
-  .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' }));
+  .catch(next);
 
-export const createCard = (req: Request, res: Response) => {
+export const createCard = (req: Request, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
   const owner = (req as any).user?._id;
   return Card.create({ name, link, owner })
@@ -21,36 +23,34 @@ export const createCard = (req: Request, res: Response) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res
-          .status(BAD_REQUEST)
-          .send({ message: 'Переданы некорректные данные при создании карточки' });
+        next(new BadRequestError('Переданы некорректные данные при создании карточки'));
       } else {
-        res
-          .status(INTERNAL_SERVER_ERROR)
-          .send({ message: 'Ошибка по умолчанию' });
+        next(err);
       }
     });
 };
 
-export const deleteCard = (req: Request, res: Response) => {
+export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
   const _id = req.params.cardId;
+  const idUser = (req as any).user._id;
   return Card.deleteOne({ _id })
     .orFail(new Error('NotValidDeleteCard'))
-    .then((data) => res.status(CREATED).send({ data }))
+    .then((data) => {
+      if (idUser !== (data as any).owner) {
+        throw new ForbiddenError('попытка удалить чужую карточку');
+      }
+      res.status(CREATED).send({ data });
+    })
     .catch((err) => {
       if (err.message === 'NotValidDeleteCard') {
-        res
-          .status(NOT_FOUND)
-          .send({ message: 'Карточка с указанным _id не найдена' });
+        next(new NotFoundError('Карточка с указанным _id не найдена'));
       } else {
-        res
-          .status(INTERNAL_SERVER_ERROR)
-          .send({ message: 'Ошибка по умолчанию' });
+        next(err);
       }
     });
 };
 
-export const likeCard = (req: Request, res: Response) => {
+export const likeCard = (req: Request, res: Response, next: NextFunction) => {
   // $addToSet, чтобы добавить элемент в массив, если его там ещё нет;
   const id = req.params.cardId;
   return Card.findByIdAndUpdate(
@@ -62,20 +62,14 @@ export const likeCard = (req: Request, res: Response) => {
     .then((card) => res.status(CREATED).send({ data: card }))
     .catch((err) => {
       if (err.message === 'NotValidLikeCard') {
-        res
-          .status(BAD_REQUEST)
-          .send({
-            message: 'Переданы некорректные данные для постановки лайка',
-          });
+        next(new BadRequestError('Переданы некорректные данные для постановки лайка'));
       } else {
-        res
-          .status(INTERNAL_SERVER_ERROR)
-          .send({ message: 'Ошибка по умолчанию' });
+        next(err);
       }
     });
 };
 
-export const dislikeCard = (req: Request, res: Response) => {
+export const dislikeCard = (req: Request, res: Response, next: NextFunction) => {
   // $pull, чтобы убрать.
   const id = req.params.cardId;
   return Card.findByIdAndUpdate(
@@ -86,16 +80,12 @@ export const dislikeCard = (req: Request, res: Response) => {
     .orFail(new Error('NotValidDisLikeCard'))
     .then((card) => res.status(CREATED).send({ data: card }))
     .catch((err) => {
-      if (err.message === 'NotValidDisLikeCard') {
-        res
-          .status(BAD_REQUEST)
-          .send({
-            message: 'Переданы некорректные данные для снятия лайка',
-          });
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Карточка с указанным _id не найдена'));
+      } else if (err.message === 'NotValidDisLikeCard') {
+        next(new BadRequestError('Переданы некорректные данные для снятия лайка'));
       } else {
-        res
-          .status(INTERNAL_SERVER_ERROR)
-          .send({ message: 'Ошибка по умолчанию' });
+        next(err);
       }
     });
 };

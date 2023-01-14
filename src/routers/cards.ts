@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router as expressRouter } from 'express';
 import {
   getCards,
   createCard,
@@ -6,13 +6,14 @@ import {
   likeCard,
   dislikeCard,
 } from '../controllers/cards';
+import { validateCreateCard, validateFindId } from '../middlewares/validation';
 
-const router = Router();
+const router = expressRouter();
 
 router.get('/', getCards);
-router.post('/', createCard);
-router.delete('/:cardId', deleteCard);
-router.put('/:cardId/likes', likeCard);
-router.delete('/:cardId/likes', dislikeCard);
+router.post('/', validateCreateCard, createCard);
+router.delete('/:cardId', validateFindId, deleteCard);
+router.put('/:cardId/likes', validateFindId, likeCard);
+router.delete('/:cardId/likes', validateFindId, dislikeCard);
 
 export default router;
