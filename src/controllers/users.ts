@@ -6,9 +6,8 @@ import { CREATED } from '../constants';
 import {
   NotFoundError,
   BadRequestError,
-  UnauthorizedError,
   ConflictError,
-  // ForbiddenError,
+  UnauthorizedError,
 } from '../errors/index';
 
 export const getUsers = (req: Request, res: Response, next: NextFunction) => User.find({})
@@ -46,7 +45,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
         password: hash,
       })
         .then((user) => {
-          res.status(CREATED).send(user);
+          res.status(CREATED).send({ data: user });
         })
         .catch((err) => {
           if (err.code === 11000) {
@@ -69,20 +68,21 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
       bcrypt.compare(password, user.password)
         .then((matched) => {
           if (!matched) {
-            // хеши не совпали — отклоняем промис
-            throw new UnauthorizedError('Неправильный логин или пароль');
+            throw new UnauthorizedError('Неправильные почта или пароль');
           }
-          res.status(CREATED).send({
+          return res.status(CREATED).send({
             token: jwt.sign({ _id: user?._id }, 'super-strong-secret', { expiresIn: '7d' }),
-            user,
           });
+        })
+        .catch((err) => {
+          next(err);
         });
     })
     .catch((err) => {
       if (err.message === 'NotValidLogin') {
         next(new BadRequestError('Неправильный логин или пароль'));
       } else {
-        next(next);
+        next(err);
       }
     });
 };

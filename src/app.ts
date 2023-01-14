@@ -1,6 +1,10 @@
 import express, { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { errors } from 'celebrate';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+
+import { PORT, DBMESTO_URL } from './constants';
 import { createUser, login } from './controllers/users';
 import auth from './middlewares/auth';
 import usersRouter from './routers/users';
@@ -12,14 +16,22 @@ interface Error {
   statusCode: number,
   message: string,
 }
-
-// Слушаем 3000 порт
-const { PORT = 3000, BASE_PATH = 'none' } = process.env;
+// Для защиты от DoS-атак
+const limiter = rateLimit({
+  windowMs: 16 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const app = express();
+app.use(limiter);
+// helmet для простановки security-заголовков для защиты
+app.use(helmet());
+
 app.use(express.json());
 // подключаемся к серверу MongoiDB
-mongoose.connect('mongodb://localhost:27017/mestodb');
+mongoose.connect(DBMESTO_URL);
 
 app.use(requestLogger); // подключаем логер запросов
 
@@ -43,6 +55,5 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 });
 
 app.listen(PORT, () => {
-  console.log('Ссылка на сервер');// eslint-disable-line
-  console.log(BASE_PATH);// eslint-disable-line
+  console.log('Подключились на сервер');// eslint-disable-line
 });
