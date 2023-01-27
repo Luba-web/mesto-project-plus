@@ -9,6 +9,7 @@ import {
   ConflictError,
   UnauthorizedError,
 } from '../errors/index';
+import { ICustomRequest } from '../types';
 
 export const getUsers = (req: Request, res: Response, next: NextFunction) => User.find({})
   .then((users) => res.status(CREATED).send({ data: users }))
@@ -93,8 +94,8 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export const updateUser = (req: Request, res: Response, next: NextFunction) => {
-  const id = (req as any).user._id;
+export const updateUser = (req: ICustomRequest, res: Response, next: NextFunction) => {
+  const id = req.user?._id;
   const { name, about } = req.body;
   return User.findByIdAndUpdate(id, { name, about }, { new: true, runValidators: true })
     .orFail(new Error('NotValidUpdateUser'))
@@ -108,8 +109,8 @@ export const updateUser = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export const updateAvatar = (req: Request, res: Response, next: NextFunction) => {
-  const id = (req as any).user._id;
+export const updateAvatar = (req: ICustomRequest, res: Response, next: NextFunction) => {
+  const id = req.user?._id;
   const { avatar } = req.body;
   return User.findByIdAndUpdate(id, { avatar }, { new: true, runValidators: true })
     .orFail(new Error('NotValidUpdateAvatar'))
@@ -123,8 +124,8 @@ export const updateAvatar = (req: Request, res: Response, next: NextFunction) =>
     });
 };
 
-export const getInfoUser = (req: Request, res: Response, next: NextFunction) => {
-  const id = (req as any).user._id;
+export const getInfoUser = (req: ICustomRequest, res: Response, next: NextFunction) => {
+  const id = req.user?._id;
   return User.findById(id)
     .orFail(new Error('NotValidGetInfoUser'))
     .then((user) => res.status(CREATED).send({ data: user }))

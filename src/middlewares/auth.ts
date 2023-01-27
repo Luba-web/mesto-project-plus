@@ -1,30 +1,28 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';
-
-interface SessionRequest extends Request {
-    user?: string | JwtPayload;
-}
+import { Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { ISessionRequest } from '../types';
+import { UNAUTHORIZED } from '../constants';
 
 const handleAuthError = (res: Response) => {
   res
-    .status(401)
+    .status(UNAUTHORIZED)
     .send({ message: 'Необходима авторизация' });
 };
 
 // eslint-disable-next-line consistent-return
-export default (req: SessionRequest, res: Response, next: NextFunction) => {
+export default (req: ISessionRequest, res: Response, next: NextFunction) => {
   const { authorization } = req.headers;
   if (!authorization || !authorization.startsWith('Bearer ')) {
     return handleAuthError(res);
   }
 
-  const token = authorization.replace('Bearer', '');
+  const token = authorization.replace('Bearer ', '');
   let payload;
 
   try {
     payload = jwt.verify(token, 'super-strong-secret');
   } catch (err) {
-    return res.status(401).send({ message: 'Необходима авторизация 1' });
+    return handleAuthError(res);
   }
 
   req.user = payload; // записываем пейлоуд в объект запроса

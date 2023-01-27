@@ -4,7 +4,7 @@ import { errors } from 'celebrate';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 
-import { PORT, DBMESTO_URL } from './constants';
+import { PORT, DBMESTO_URL, NOT_FOUND } from './constants';
 import { createUser, login } from './controllers/users';
 import auth from './middlewares/auth';
 import usersRouter from './routers/users';
@@ -43,9 +43,14 @@ app.use(auth);// все роуты ниже этой строки будут з�
 app.use('/users', usersRouter);
 app.use('/cards', cardsRouter);
 
+app.use((req, res) => {
+  res.status(NOT_FOUND).send({ message: 'Не найден ресурс' });
+});
+
 app.use(errorLogger); // подключаем логер ошибок
 
 app.use(errors());
+
 // eslint-disable-next-line no-unused-vars
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   const { statusCode = 500, message } = err;

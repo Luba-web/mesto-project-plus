@@ -7,14 +7,15 @@ import {
   BadRequestError,
   ForbiddenError,
 } from '../errors/index';
+import { ICustomRequest } from '../types';
 
 export const getCards = (req: Request, res: Response, next: NextFunction) => Card.find({})
   .then((cards) => res.status(CREATED).send({ data: cards }))
   .catch(next);
 
-export const createCard = (req: Request, res: Response, next: NextFunction) => {
+export const createCard = (req: ICustomRequest, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
-  const owner = (req as any).user?._id;
+  const owner = req.user?._id;
   return Card.create({ name, link, owner })
     .then((card) => {
       res.status(CREATED).send({ data: card });
@@ -28,9 +29,9 @@ export const createCard = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
+export const deleteCard = (req: ICustomRequest, res: Response, next: NextFunction) => {
   const _id = req.params.cardId;
-  const idUser = (req as any).user._id;
+  const idUser = req.user?._id;
   return Card.deleteOne({ _id })
     .orFail(new Error('NotValidDeleteCard'))
     .then((data) => {
@@ -48,12 +49,12 @@ export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export const likeCard = (req: Request, res: Response, next: NextFunction) => {
+export const likeCard = (req: ICustomRequest, res: Response, next: NextFunction) => {
   // $addToSet, чтобы добавить элемент в массив, если его там ещё нет;
   const id = req.params.cardId;
   return Card.findByIdAndUpdate(
     id,
-    { $addToSet: { likes: (req as any).user._id } }, // добавить _id в массив, если его там нет
+    { $addToSet: { likes: req.user?._id } }, // добавить _id в массив, если его там нет
     { new: true, runValidators: true },
   )
     .orFail(new Error('NotValidLikeCard'))
@@ -67,12 +68,12 @@ export const likeCard = (req: Request, res: Response, next: NextFunction) => {
     });
 };
 
-export const dislikeCard = (req: Request, res: Response, next: NextFunction) => {
+export const dislikeCard = (req: ICustomRequest, res: Response, next: NextFunction) => {
   // $pull, чтобы убрать.
   const id = req.params.cardId;
   return Card.findByIdAndUpdate(
     id,
-    { $pull: { likes: (req as any).user._id } }, // убрать _id из массива
+    { $pull: { likes: req.user?._id } }, // убрать _id из массива
     { new: true, runValidators: true },
   )
     .orFail(new Error('NotValidDisLikeCard'))
